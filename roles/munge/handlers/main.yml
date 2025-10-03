@@ -1,0 +1,5 @@
+---
+- name: restart munge
+  systemd:
+    name: munge
+    state: restarted

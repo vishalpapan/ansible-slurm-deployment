@@ -1,0 +1,6 @@
+---
+slurm_version: "25.05.3"
+slurm_download_url: "https://download.schedmd.com/slurm/slurm-{{ slurm_version }}.tar.bz2"
+slurm_tarball_name: "slurm-{{ slurm_version }}.tar.bz2"
+slurm_source_dir: "/home/ec2-user/slurm-files"
+slurm_extract_dir: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}"

@@ -1,0 +1,58 @@
+---
+- name: Create Slurm configuration directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: slurm
+    group: slurm
+    mode: '0755'
+  loop:
+    - /etc/slurm
+    - /var/spool/slurmctld
+    - /var/spool/slurmd
+    - /var/log/slurm
+    - /run/slurm
+    - /run/slurmdbd
+  become: yes
+  tags: slurm_config
+
+- name: Template Slurm configuration files
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/slurm/{{ item }}"
+    owner: slurm
+    group: slurm
+    mode: '0600'
+  loop:
+    - slurm.conf
+    - slurmdbd.conf
+    - topology.conf
+    - cgroup.conf
+  notify: restart slurm services
+  become: yes
+  tags: slurm_config
+
+- name: Set proper ownership on Slurm directories
+  file:
+    path: "{{ item }}"
+    owner: slurm
+    group: slurm
+    recurse: yes
+  loop:
+    - /var/spool/slurmctld
+    - /var/spool/slurmd
+    - /var/log/slurm
+  become: yes
+  tags: slurm_config
+
+- name: Enable and start Slurm services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop:
+    - slurmctld
+    - slurmdbd
+    - slurmd
+  become: yes
+  tags: slurm_services

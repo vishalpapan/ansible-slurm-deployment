@@ -1,0 +1,81 @@
+---
+- name: Download Slurm source code
+  get_url:
+    url: "{{ slurm_download_url }}"
+    dest: "{{ slurm_source_dir }}/{{ slurm_tarball_name }}"
+    mode: '0644'
+  tags: slurm_install
+
+- name: Clean up any previous extraction (if files are in wrong location)
+  file:
+    path: "{{ slurm_source_dir }}/{{ item }}"
+    state: absent
+  loop:
+    - "AUTHORS"
+    - "CHANGELOG"
+    - "configure"
+    - "Makefile.in"
+    - "src"
+    - "etc"
+    - "config.log"
+  ignore_errors: yes
+  tags: slurm_install
+
+- name: Create Slurm version directory
+  file:
+    path: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}"
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: '0755'
+  tags: slurm_install
+
+- name: Extract Slurm tarball to version directory
+  unarchive:
+    src: "{{ slurm_source_dir }}/{{ slurm_tarball_name }}"
+    dest: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}"
+    remote_src: yes
+    extra_opts: "--strip-components=1"
+  tags: slurm_install
+
+- name: Configure Slurm build
+  command:
+    cmd: "./configure --prefix=/usr --sysconfdir=/etc/slurm --with-mysql_config=/usr/bin --with-hdf5=no --enable-pam --enable-deprecated --enable-multiple-slurmd --with-jwt=/usr/local --with-json=/usr/local --with-munge=/usr --enable-cgroupv2 "
+    chdir: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}"
+    creates: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}/config.status"
+  tags: slurm_install
+
+- name: Build Slurm
+  command:
+    cmd: "make"
+    chdir: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}"
+    creates: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}/src/slurmd/slurmd"
+  tags: slurm_install
+
+- name: Install Slurm
+  command:
+    cmd: "make install"
+    chdir: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}"
+  become: yes
+  tags: slurm_install
+
+- name: Copy systemd service files
+  copy:
+    src: "{{ slurm_source_dir }}/slurm-{{ slurm_version }}/etc/{{ item }}.service"
+    dest: /etc/systemd/system/{{ item }}.service
+    owner: root
+    group: root
+    mode: '0644'
+    remote_src: yes
+  loop:
+    - slurmctld
+    - slurmd
+    - slurmdbd
+  become: yes
+  tags: slurm_services
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+  become: yes
+  tags: slurm_services

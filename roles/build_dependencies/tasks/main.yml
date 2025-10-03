@@ -1,0 +1,15 @@
+---
+- name: Install base dependencies and build tools
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ base_packages }}"
+  tags: base_deps
+
+- name: Install Development libraries
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ dev_libraries }}"
+  tags: dev_libs
+

@@ -1,0 +1,9 @@
+---
+# Pre-defined password (optional - will generate random if not set)
+slurm_db_password: ""
+
+# MariaDB packages
+mariadb_packages:
+  - mariadb105-server
+  - mariadb105-devel
+  - mariadb105

@@ -1,0 +1,18 @@
+---
+- name: Setup Slurm user and Directories
+  hosts: slurm_controllers
+  become: yes
+  gather_facts: yes
+
+
+  roles:
+    - role: slurm_base
+    - role: slurm_user
+    - role: munge
+    - role: build_dependencies
+    - role: mariadb
+    - role: json_c
+    - role: libjwt
+    - role: slurm_install
+    - role: slurm_config
+

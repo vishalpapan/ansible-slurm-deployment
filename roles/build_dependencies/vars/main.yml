@@ -1,0 +1,38 @@
+---
+base_packages:
+  - gcc
+  - gcc-c++
+  - make
+  - openssl-devel
+  - pam-devel
+  - perl-ExtUtils-MakeMaker
+  - python3-devel
+  - readline-devel
+  - rpm-build
+  - tar
+  - lua
+  - lua-devel
+  - readline
+  - readline-devel
+  - cmake
+  - git
+  - jansson
+  - jansson-devel
+  - autoconf
+  - pkgconf
+  - libtool
+  - wget
+  - bzip2
+  - dbus-devel
+  - systemd-devel
+  - mariadb105-devel
+
+dev_libraries:
+  - lua-devel
+  - pam-devel
+  - perl-ExtUtils-MakeMaker
+  - readline-devel
+  - openssl-devel
+  - python3-devel
+  - dbus-devel
+  - systemd-devel

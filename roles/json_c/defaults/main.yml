@@ -1,0 +1,5 @@
+---
+json_c_repo: "https://github.com/json-c/json-c.git"
+json_c_version: "json-c-0.15-20200726"
+json_c_source_dir: "/home/ec2-user/slurm-files/json-c"
+json_c_build_dir: "/home/ec2-user/slurm-files/json-c-build"

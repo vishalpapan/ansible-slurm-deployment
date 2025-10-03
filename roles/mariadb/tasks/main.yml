@@ -1,0 +1,46 @@
+---
+- name: Install MariaDB server and client
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ mariadb_packages }}"
+  tags: mariadb_install
+
+- name: Start and enable MariaDB service
+  systemd:
+    name: mariadb
+    enabled: yes
+    state: started
+  tags: mariadb_service
+
+- name: Wait for MariaDB to be ready
+  wait_for:
+    path: /var/lib/mysql/mysql.sock
+    state: present
+    timeout: 30
+  tags: mariadb_setup
+
+- name: Create Slurm database
+  command:
+    cmd: "mysql -e 'CREATE DATABASE IF NOT EXISTS slurm_acct_db;'"
+  tags: mariadb_setup
+
+- name: Create Slurm database user without password
+  command:
+    cmd: "mysql -e \"CREATE USER IF NOT EXISTS 'slurm'@'localhost';\""
+  tags: mariadb_setup
+
+- name: Grant privileges to Slurm user
+  command:
+    cmd: "mysql -e 'GRANT ALL PRIVILEGES ON slurm_acct_db.* TO \"slurm\"@\"localhost\";'"
+  tags: mariadb_setup
+
+- name: Flush privileges
+  command:
+    cmd: "mysql -e 'FLUSH PRIVILEGES;'"
+  tags: mariadb_setup
+
+- name: Display database setup completion
+  debug:
+    msg: "MariaDB setup completed - Slurm database and user created without password"
+  tags: mariadb_setup

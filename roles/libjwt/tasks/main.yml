@@ -1,0 +1,58 @@
+---
+- name: Create libjwt source directory
+  file:
+    path: "{{ libjwt_source_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  tags: libjwt
+
+- name: Clone libjwt repository
+  git:
+    repo: "{{ libjwt_repo }}"
+    dest: "{{ libjwt_source_dir }}"
+    version: "{{ libjwt_version }}"
+    depth: 1
+  tags: libjwt
+
+- name: Install libjwt build dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ libjwt_build_deps }}"
+  tags: libjwt
+
+- name: Run autoconf for libjwt
+  command:
+    cmd: "autoreconf --install"
+    chdir: "{{ libjwt_source_dir }}"
+    creates: "{{ libjwt_source_dir }}/configure"
+  tags: libjwt
+
+- name: Configure libjwt
+  command:
+    cmd: "./configure --prefix=/usr/local"
+    chdir: "{{ libjwt_source_dir }}"
+    creates: "{{ libjwt_source_dir }}/config.status"
+  tags: libjwt
+
+- name: Build libjwt
+  command:
+    cmd: "make -j"
+    chdir: "{{ libjwt_source_dir }}"
+    creates: "{{ libjwt_source_dir }}/.libs/libjwt.so"
+  tags: libjwt
+
+- name: Install libjwt
+  command:
+    cmd: "make install"
+    chdir: "{{ libjwt_source_dir }}"
+  become: yes
+  tags: libjwt
+
+- name: Update library cache for libjwt
+  command:
+    cmd: "ldconfig"
+  become: yes
+  tags: libjwt

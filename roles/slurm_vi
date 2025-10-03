@@ -1,0 +1,13 @@
+---
+- name: restart slurm services
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - slurmctld
+    - slurmdbd
+    - slurmd
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes

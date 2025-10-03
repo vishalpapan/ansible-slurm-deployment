@@ -1,0 +1,25 @@
+---
+- name: Deploy Slurm Compute Node
+  hosts: slurm_computes
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - role: slurm_base
+    - role: slurm_user
+    - role: munge
+    - role: build_dependencies
+    - role: json_c
+    - role: libjwt
+    - role: slurm_install
+    - role: slurm_config
+
+  tasks:
+    - name: Disable controller services on compute nodes
+      systemd:
+        name: "{{ item }}"
+        enabled: no
+        state: stopped
+      loop:
+        - slurmctld
+        - slurmdbd

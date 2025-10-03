@@ -1,0 +1,44 @@
+---
+- name: Create JSON-C build directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  loop:
+    - "{{ json_c_source_dir }}"
+    - "{{ json_c_build_dir }}"
+  tags: json_c
+
+- name: Clone JSON-C repository
+  git:
+    repo: "{{ json_c_repo }}"
+    dest: "{{ json_c_source_dir }}"
+    version: "{{ json_c_version }}"
+    depth: 1
+  tags: json_c
+
+- name: Configure JSON-C with CMake
+  command:
+    cmd: "cmake {{ json_c_source_dir }} -B{{ json_c_build_dir }}"
+    creates: "{{ json_c_build_dir }}/CMakeCache.txt"
+  tags: json_c
+
+- name: Build JSON-C
+  command:
+    cmd: "make -C {{ json_c_build_dir }}"
+    creates: "{{ json_c_build_dir }}/libjson-c.a"
+  tags: json_c
+
+- name: Install JSON-C
+  command:
+    cmd: "make install -C {{ json_c_build_dir }}"
+  become: yes
+  tags: json_c
+
+- name: Update library cache
+  command:
+    cmd: "ldconfig"
+  become: yes
+  tags: json_c

@@ -1,0 +1,149 @@
+#!/bin/bash
+
+LOGFILE="/tmp/slurm-setup.log"
+echo "Starting Slurmd Setup at $(date)" > $LOGFILE
+
+# Enable cgroup v2 pure mode (if not already enabled)
+if ! grep -q "systemd.unified_cgroup_hierarchy=1" /proc/cmdline; then
+    echo "Enabling cgroup v2 pure mode..." >> $LOGFILE
+    sudo grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=1"
+    echo "Reboot required for cgroup changes. Please reboot manually." >> $LOGFILE
+    # Uncomment the next line to auto-reboot (use with caution)
+    # sudo reboot
+fi
+
+# Create slurm user and group
+echo "Creating slurm user and group..." >> $LOGFILE
+export SLURMUSER=1002
+sudo groupadd -g $SLURMUSER slurm
+sudo useradd -m -c "SLURM Daemon User" -d /var/lib/slurm \
+    -u $SLURMUSER -g slurm -s /bin/bash slurm
+echo "Slurm user created." >> $LOGFILE
+
+# Install Munge
+sudo dnf install -y munge munge-devel munge-libs >> $LOGFILE 2>&1
+
+# Mount NFS
+echo "Mounting NFS..." >> $LOGFILE
+sudo bash -c 'echo "ip-10-0-1-37:/mnt /mnt nfs" >> /etc/fstab'
+sudo mount -a >> $LOGFILE 2>&1
+echo "NFS mounted successfully." >> $LOGFILE
+
+# Set up Munge key
+echo "Setting up Munge key..." >> $LOGFILE
+sudo cp /mnt/installer/wlm/slurm/25.5.3/munge.key /etc/munge/
+sudo chown munge:munge /etc/munge/munge.key
+sudo chmod 400 /etc/munge/munge.key
+sudo chown -R munge:munge /etc/munge /var/lib/munge /var/log/munge
+sudo chmod 0700 /etc/munge /var/lib/munge
+sudo chmod 0755 /var/log/munge
+sudo systemctl enable munge
+sudo systemctl start munge
+echo "Munge setup completed." >> $LOGFILE
+
+# Install required packages
+echo "Installing dependencies..." >> $LOGFILE
+sudo dnf install -y gcc gcc-c++ make openssl-devel pam-devel perl-ExtUtils-MakeMaker python3-devel readline-devel rpm-build tar \
+    lua lua-devel readline readline-devel cmake git jansson jansson-devel autoconf pkgconf libtool dbus-devel systemd-devel >> $LOGFILE 2>&1
+echo "Dependencies installed." >> $LOGFILE
+
+# Install MariaDB
+echo "Installing MariaDB..." >> $LOGFILE
+sudo yum install -y mariadb105-server mariadb105-devel >> $LOGFILE 2>&1
+sudo systemctl enable mariadb
+sudo systemctl start mariadb
+
+# Generate a random password
+DBPASS=$(openssl rand -base64 12)
+
+# Create the database
+mysql -e "CREATE DATABASE slurm_acct_db;"
+mysql -e "CREATE USER 'slurm'@'localhost' IDENTIFIED BY '${DBPASS}';"
+mysql -e "GRANT ALL ON slurm_acct_db.* TO 'slurm'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
+echo "MariaDB installed and configured." >> $LOGFILE
+
+# Build and install JSON-C
+echo "Building and installing JSON-C..." >> $LOGFILE
+git clone --depth 1 --single-branch -b json-c-0.15-20200726 https://github.com/json-c/json-c.git /home/ec2-user/slurm-files/json-c >> $LOGFILE 2>&1
+mkdir -p /home/ec2-user/slurm-files/json-c-build
+cmake /home/ec2-user/slurm-files/json-c -B/home/ec2-user/slurm-files/json-c-build >> $LOGFILE 2>&1
+sudo make -C /home/ec2-user/slurm-files/json-c-build >> $LOGFILE 2>&1
+sudo make install -C /home/ec2-user/slurm-files/json-c-build >> $LOGFILE 2>&1
+echo "JSON-C installed." >> $LOGFILE
+
+# Build and install libjwt
+echo "Building and installing libjwt..." >> $LOGFILE
+git clone --depth 1 --single-branch -b v1.12.0 https://github.com/benmcollins/libjwt.git /home/ec2-user/slurm-files/libjwt >> $LOGFILE 2>&1
+cd /home/ec2-user/slurm-files/libjwt
+autoreconf --install >> $LOGFILE 2>&1
+./configure --prefix=/usr/local >> $LOGFILE 2>&1
+make -j >> $LOGFILE 2>&1
+sudo make install >> $LOGFILE 2>&1
+echo "libjwt installed." >> $LOGFILE
+
+# Download and install Slurm
+mkdir /home/ec2-user/slurm-files
+echo "Downloading and installing Slurm..." >> $LOGFILE
+wget https://download.schedmd.com/slurm/slurm-25.05.3.tar.bz2 -O /home/ec2-user/slurm-files/slurm-25.05.3.tar.bz2 >> $LOGFILE 2>&1
+tar -xvjf /home/ec2-user/slurm-files/slurm-25.05.3.tar.bz2 -C /home/ec2-user/slurm-files >> $LOGFILE 2>&1
+cd /home/ec2-user/slurm-files/slurm-25.05.3
+./configure --prefix=/usr \
+  --sysconfdir=/etc/slurm \
+  --with-mysql_config=/usr/bin \
+  --with-hdf5=no \
+  --enable-pam \
+  --enable-deprecated \
+  --enable-multiple-slurmd \
+  --with-jwt=/usr/local \
+  --with-json=/usr/local \
+  --enable-cgroupv2 \
+  --with-munge=/usr >> $LOGFILE 2>&1
+make >> $LOGFILE 2>&1
+sudo make install >> $LOGFILE 2>&1
+echo "Slurm installed." >> $LOGFILE
+
+# Create necessary directories
+sudo mkdir -p /etc/slurm /var/log/slurm /run/slurm /var/spool/slurmd /var/spool/slurmctld 
+sudo chown -R slurm:slurm /etc/slurm /var/log/slurm /run/slurm /var/spool/slurmd /var/spool/slurmctld
+sudo mkdir -p /run/slurm
+sudo chown slurm:slurm /run/slurm
+sudo chmod 755 /var/spool/slurmd /var/spool/slurmctld
+sudo touch /run/slurmdbd/slurmdbd.pid
+sudo chown -R slurm:slurm /run/slurmdbd/slurmdbd.pid
+echo "Directories created." >> $LOGFILE
+
+# Copy configuration files
+sudo cp /mnt/installer/wlm/slurm/25.5.3/slurm.conf /etc/slurm/
+sudo cp /mnt/installer/wlm/slurm/25.5.3/slurmdbd.conf /etc/slurm/
+sudo cp /mnt/installer/wlm/slurm/25.5.3/topology.conf /etc/slurm/
+sudo cp /mnt/installer/wlm/slurm/25.5.3/cgroup.conf /etc/slurm/
+sudo chown slurm:slurm /etc/slurm/slurm*.conf
+sudo chmod 600 /etc/slurm/slurm*.conf
+echo "Configuration files copied." >> $LOGFILE
+
+sudo cp /home/ec2-user/slurm-files/slurm-25.05.3/etc/slurmctld.service /etc/systemd/system/
+sudo cp /home/ec2-user/slurm-files/slurm-25.05.3/etc/slurmdbd.service /etc/systemd/system/
+sudo cp /home/ec2-user/slurm-files/slurm-25.05.3/etc/slurmd.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable slurmctld.service slurmdbd.service slurmd.service
+
+# Update hostname in slurm.conf
+HOSTNAME=$(hostname -s)
+if [ -f /etc/slurm/slurm.conf ]; then
+    sed -i "s/^SlurmctldHost=.*$/SlurmctldHost=${HOSTNAME}/" /etc/slurm/slurm.conf
+    sed -i "s/^StoragePass=.*/StoragePass=${DBPASS}/" /etc/slurm/slurmdbd.conf
+    sed -i "s/^AccountingStorageHost=.*$/AccountingStorageHost=${HOSTNAME}/" /etc/slurm/slurm.conf
+    sed -i "s/^NodeName=ipaddress/NodeName=${HOSTNAME}/" /etc/slurm/slurm.conf
+    echo "Hostname updated in slurm.conf with ${HOSTNAME}" >> $LOGFILE
+else
+    echo "Error: /etc/slurm/slurm.conf not found. Skipping hostname update." >> $LOGFILE
+fi
+
+# Enable and start Slurm services
+sudo systemctl enable slurmctld slurmdbd slurmd
+sudo systemctl start slurmctld slurmdbd slurmd
+echo "Slurm services started." >> $LOGFILE
+
+
+echo "Slurmd setup complete at $(date)" >> $LOGFILE

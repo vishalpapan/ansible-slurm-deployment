@@ -1,0 +1,10 @@
+---
+libjwt_repo: "https://github.com/benmcollins/libjwt.git"
+libjwt_version: "v1.12.0"
+libjwt_source_dir: "/home/ec2-user/slurm-files/libjwt"
+libjwt_build_deps:
+  - automake
+  - libtool
+  - pkgconfig
+  - jansson-devel
+  - openssl-devel
