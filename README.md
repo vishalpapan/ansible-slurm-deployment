@@ -1,7 +1,7 @@
-# 🚀 Slurm HPC Cluster Automation with Ansible
+# Slurm HPC Cluster Automation with Ansible
 
 ## Overview
-Enterprise-grade Ansible automation for deploying Slurm HPC clusters. Transforms manual 200+ line bash scripts into modular, scalable Infrastructure as Code.
+This project represents my journey into learning Ansible by tackling a real-world challenge: automating the complex deployment of a Slurm HPC cluster. I took my existing manual installation script and transformed it into a dynamic, enterprise-grade Ansible automation. Now, you can deploy a production-ready Slurm cluster where the version is dynamically fetched from the official website. For a deeper dive into the manual process that inspired this automation, check out my Medium article: A Comprehensive Guide to Installing Slurm from Source https://medium.com/@vishal.papan/a-comprehensive-guide-to-installing-slurm-from-source-20028ff837d7.
 
 ## Architecture Diagram
 
@@ -27,15 +27,15 @@ Enterprise-grade Ansible automation for deploying Slurm HPC clusters. Transforms
     └─────────────────┘
 ```
 
-## 🎯 Key Features
+## Key Features
 
-- ✅ **Dynamic Configuration**: Auto-discovery of all cluster nodes
-- ✅ **cgroup v2 Compatible**: Modern OS support (Amazon Linux 2023+)
-- ✅ **Version Agnostic**: Easy Slurm version changes via variables
-- ✅ **Modular Design**: 10+ reusable Ansible roles
-- ✅ **Multi-Node Support**: Controller + Compute node architecture
-- ✅ **Idempotent**: Safe for multiple runs
-- ✅ **Production Ready**: Error handling and service management
+-  **Dynamic Configuration**: Auto-discovery of all cluster nodes
+-  **cgroup v2 Compatible**: Modern OS support (Amazon Linux 2023+)
+-  **Version Agnostic**: Easy Slurm version changes via variables
+-  **Modular Design**: 10+ reusable Ansible roles
+-  **Multi-Node Support**: Controller + Compute node architecture
+-  **Idempotent**: Safe for multiple runs
+-  **Production Ready**: Error handling and service management
 
 ## 📁 Project Structure
 
@@ -57,7 +57,7 @@ slurm-ansible/
     └── slurm_config/             # Dynamic configuration templates
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Prerequisites
 ```bash
@@ -65,7 +65,7 @@ slurm-ansible/
 pip install ansible
 
 # Clone repository
-git clone <your-repo>
+git clone https://github.com/vishalpapan/ansible-slurm-deployment.git
 cd slurm-ansible
 ```
 
@@ -90,7 +90,7 @@ ansible-playbook -i inventory.ini deploy-slurm-controller.yml
 ansible-playbook -i inventory.ini deploy-slurm-compute.yml
 ```
 
-## ⚙️ Configuration Variables
+##  Configuration Variables
 
 ### Global Variables (roles/slurm_install/defaults/main.yml)
 ```yaml
@@ -104,7 +104,7 @@ slurm_primary_controller: "control1"        # Main controller hostname
 slurm_cluster_name: "Slurm-Cluster"        # Cluster name
 ```
 
-## 🔧 Version Management
+##  Version Management
 
 ### Upgrading Slurm Version
 1. Edit `roles/slurm_install/defaults/main.yml`
@@ -115,7 +115,7 @@ slurm_cluster_name: "Slurm-Cluster"        # Cluster name
 - Slurm 23.x.x and above
 - Tested on: 25.05.3, 24.05.x, 23.11.x
 
-## 🌐 Dynamic Features
+##  Dynamic Features
 
 ### Auto Node Discovery
 The system automatically discovers all compute nodes from inventory:
@@ -131,14 +131,8 @@ NodeName={{ hostvars[host]['ansible_hostname'] }} CPUs={{ hostvars[host].ansible
 PartitionName=debug Nodes={% for host in groups['slurm_computes'] %}{{ hostvars[host]['ansible_hostname'] }}{% if not loop.last %},{% endif %}{% endfor %} Default=YES MaxTime=INFINITE State=UP
 ```
 
-## 🔐 Security Features
 
-- **Munge Authentication**: Shared key authentication across cluster
-- **User Isolation**: Dedicated slurm user with proper permissions
-- **Service Security**: Systemd service hardening
-- **Database Security**: MariaDB with dedicated slurm user
-
-## 🛠️ Advanced Configuration
+## Advanced Configuration
 
 ### Custom Build Options
 Edit `roles/slurm_install/tasks/main.yml` configure command:
@@ -156,7 +150,7 @@ Edit `roles/slurm_install/tasks/main.yml` configure command:
 2. Run: `ansible-playbook -i inventory.ini deploy-slurm-compute.yml --limit new_node`
 3. Restart slurmctld: `systemctl restart slurmctld`
 
-## 📊 Monitoring & Troubleshooting
+##Monitoring & Troubleshooting
 
 ### Service Status
 ```bash
@@ -176,17 +170,6 @@ squeue
 scontrol show nodes
 ```
 
-## 🔄 Transformation Benefits
-
-| Before (Bash Script) | After (Ansible) |
-|---------------------|-----------------|
-| ❌ Manual execution | ✅ Automated deployment |
-| ❌ Single node focus | ✅ Multi-node orchestration |
-| ❌ Hardcoded configs | ✅ Dynamic templates |
-| ❌ No idempotency | ✅ Safe re-runs |
-| ❌ Error prone | ✅ Robust error handling |
-| ❌ Version locked | ✅ Version agnostic |
-
 ## 🚨 Known Issues & Solutions
 
 ### cgroup v2 Compatibility
@@ -197,7 +180,7 @@ scontrol show nodes
 **Issue**: Missing build dependencies
 **Solution**: Comprehensive package installation in `build_dependencies` role
 
-## 📝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create feature branch
@@ -208,14 +191,8 @@ scontrol show nodes
 
 MIT License - See LICENSE file for details
 
-## 🤝 Support
+## You can connect with me 
 
-- Create GitHub issues for bugs
-- Discussions for questions
-- LinkedIn: [Your Profile] for professional inquiries
+- LinkedIn: https://www.linkedin.com/in/vishal-papan
 
 ---
-
-**🎉 From 200+ line bash script to enterprise-grade Infrastructure as Code!**
-
-*Transform your HPC deployments with this production-ready Ansible automation.*
