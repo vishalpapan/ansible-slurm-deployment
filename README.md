@@ -5,27 +5,8 @@ This project represents my journey into learning Ansible by tackling a real-worl
 
 ## Architecture Diagram
 
-```
-                    ┌─────────────────┐
-                    │   Ansible       │
-                    │   Control Node  │
-                    │                 │
-                    │ • Playbooks     │
-                    │ • Roles         │
-                    │ • Templates     │
-                    └─────────────────┘
-                            │
-                            ▼
-    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-    │  Controller     │    │  Compute Node   │    │  Compute Node   │
-    │  Node           │    │                 │    │                 │
-    │                 │    │                 │    │                 │
-    │ • slurmctld     │    │ • slurmd        │    │ • slurmd        │
-    │ • slurmdbd      │    │ • Auto-config   │    │ • Auto-config   │
-    │ • MariaDB       │    │ • Munge auth    │    │ • Munge auth    │
-    │ • Munge auth    │    └─────────────────┘    └─────────────────┘
-    └─────────────────┘
-```
+<img width="3145" height="1999" alt="slurm-ansible-architecture" src="https://github.com/user-attachments/assets/35e4ad53-4620-4342-b57a-f14cfe51f790" />
+
 
 ## Key Features
 
